@@ -39,20 +39,21 @@ app.post('/cadastro_empresa', (req, res) => {
     const tipo = req.body.tipo
 
     const confirmarInexistencia = `select count(cnpj) as resultado from empresas where cnpj = ${cnpj};`
-    const cadastroAprovado = `insert into empresas (nome, razao_social, cnpj, endereco, tipo) values ('${nome}', '${razao}', ${cnpj}, '${endereco}', '${tipo}');`
+    const cadastroAprovado = `insert into empresas (nome, razao_social, cnpj, endereco, tipo) value ('${nome}', '${razao}', ${cnpj}, '${endereco}', '${tipo}');`
     conectBanco.query(confirmarInexistencia, (err, resposta) => {
         const resultado = resposta[0].resultado
         if (resultado !== 0) {
             console.log('Já existe esse cadastro!')
             return res.status(400).json({ message: 'CNPJ já cadastrado!' });
+        } else {
+            conectBanco.query(cadastroAprovado, (erro, respostaCadatroEmpresa) => {
+                if (respostaCadatroEmpresa == undefined) {
+                    res.status(400).json({ message: `Erro ao inserir no banco de dados!`})
+                }
+                res.status(200).json({ message: `Cadastrado com sucesso`})
+                console.log(`Cadastrado!`)
+            })
         }
-        conectBanco.query(cadastroAprovado, (erro, respostaCadatroEmpresa) => {
-            if (respostaCadatroEmpresa == undefined) {
-                res.status(400).json({ message: `Erro ao inserir no banco de dados!`})
-            }
-            res.status(200).json({ message: `Cadastrado com sucesso`})
-            console.log(`Cadastrado!`)
-        })
     })
 })
 
@@ -61,7 +62,7 @@ app.post('/cadastrar_socio', (req, res) => {
     const codigo_parceria = req.body.num_contato
     const socio_empresa = req.body.empresa
 
-    const conferirInexistencia = `select count(id_socios) as quantidadeExistente from socios where id_socios = ${codigo_parceria}`
+    const conferirInexistencia = `select count(id_socios) as quantidadeExistente from socios where id_socios = ${codigo_parceria} and id_empresa = ${socio_empresa}`
     const cadastrarSocio = `insert into socios (id_socios, id_empresa, nome) value (${codigo_parceria}, ${socio_empresa}, '${nome_socio}');`
 
     conectBanco.query(conferirInexistencia, (erro, resp) => {
@@ -70,13 +71,56 @@ app.post('/cadastrar_socio', (req, res) => {
         if (leituraResp !== 0) {
             console.log(`Já a registro`)
             return res.status(400).json({ message: `Socio já cadastrado! O contrato de numero: ${codigo_parceria} já tem registro!`})
+        } else {
+            conectBanco.query(cadastrarSocio, (err, resposta) => {
+                if (resposta == undefined) {
+                    return res.status(400).json({ message: `Erro ao cadastrar`})
+                }
+                console.log(`Sucesso ao cadastrar socio!`)
+                res.status(200).json({ message: `Socio cadastrado com sucesso! Numero do contrato registrado: ${codigo_parceria}.`})
+            })
         }
-        conectBanco.query(cadastrarSocio, (err, resposta) => {
-            if (resposta == undefined) {
-                return res.status(400).json({ message: `Erro ao cadastrar`})
-            }
-            console.log(`Sucesso ao cadastrar socio!`)
-            res.status(200).json({ message: `Socio cadastrado com sucesso! Numero do contrato registrado: ${codigo_parceria}.`})
-        })
     })
 })
+
+
+
+//Usuario
+
+app.post('/usuario_cadastro', (req, res) => {
+    const cpf = req.body.cpf
+    const nome = req.body.nome
+    const cnpj = req.body.cnpj
+    const tipo = req.body.perfil
+    const status = req.body.status
+
+    const conferirRegistro = `select count(cpf) as buscaCpf from usuarios where cpf = ${cpf}`
+    const conferirLigacao = `select count(id_empresa) as registradoPelaEmpresa from empresa_usuario where id_empresa = ${cnpj} and id_usuario = ${cpf}`
+    const inserirRegistro = `insert into usuarios(cpf, nome) value (${cpf}, '${nome}')`
+    const inserirLigacao = `insert into empresa_usuario(id_empresa, id_usuario, tipo, status_atual) value (${cnpj}, ${cpf}, '${tipo}', '${status}')`
+
+    conectBanco.query(conferirRegistro, (err, resp) => {
+        const leituraResp = resp[0].buscaCpf
+        if(leituraResp !== 0) {
+            conectBanco.query(conferirLigacao, (erro, conferirLigacaoResp) => {
+                const leituraResposta = conferirLigacaoResp[0].registradoPelaEmpresa
+                console.log(leituraResposta)
+                if(leituraResposta !== 0) {
+                    return res.status(400).json({ message: 'Esse usuario já foi registrado pela empresa!'})
+                } else {
+                    conectBanco.query(inserirLigacao, (falha, sinal) => {
+                        return res.status(207).json({ message: 'O usuario vínculado a empresa! Usuario já era existente!' })
+                    })
+                }
+            })
+        } else {
+            conectBanco.query(inserirRegistro, (erro, resposta) => {
+                conectBanco.query(inserirRegistro, (falha, sinal) => {
+                    res.status(200).json({ message: 'Usuario inserido, e vínculado a empresa!'})
+                })
+            })
+        }
+    })
+})
+
+// AQUI OS DE CONSULTAR !!
