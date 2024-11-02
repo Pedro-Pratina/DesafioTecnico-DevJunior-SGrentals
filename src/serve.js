@@ -39,19 +39,44 @@ app.post('/cadastro_empresa', (req, res) => {
     const tipo = req.body.tipo
 
     const confirmarInexistencia = `select count(cnpj) as resultado from empresas where cnpj = ${cnpj};`
-    const cadastroAprovado = `insert into empresas (nome, razao_social, cnpj, endereco, tipo) values ('${nome}', '${razao}', '${cnpj}', '${endereco}', '${tipo}');`
+    const cadastroAprovado = `insert into empresas (nome, razao_social, cnpj, endereco, tipo) values ('${nome}', '${razao}', ${cnpj}, '${endereco}', '${tipo}');`
     conectBanco.query(confirmarInexistencia, (err, resposta) => {
         const resultado = resposta[0].resultado
         if (resultado !== 0) {
             console.log('Já existe esse cadastro!')
-            return res.status(400).json({ message: 'CNPJ já cadastrado' });
+            return res.status(400).json({ message: 'CNPJ já cadastrado!' });
         }
-        console.log('Não existe codigo continua!')
         conectBanco.query(cadastroAprovado, (erro, respostaCadatroEmpresa) => {
             if (respostaCadatroEmpresa == undefined) {
                 res.status(400).json({ message: `Erro ao inserir no banco de dados!`})
             }
             res.status(200).json({ message: `Cadastrado com sucesso`})
+            console.log(`Cadastrado!`)
+        })
+    })
+})
+
+app.post('/cadastrar_socio', (req, res) => {
+    const nome_socio = req.body.nome
+    const codigo_parceria = req.body.num_contato
+    const socio_empresa = req.body.empresa
+
+    const conferirInexistencia = `select count(id_socios) as quantidadeExistente from socios where id_socios = ${codigo_parceria}`
+    const cadastrarSocio = `insert into socios (id_socios, id_empresa, nome) value (${codigo_parceria}, ${socio_empresa}, '${nome_socio}');`
+
+    conectBanco.query(conferirInexistencia, (erro, resp) => {
+        const leituraResp = resp[0].quantidadeExistente
+
+        if (leituraResp !== 0) {
+            console.log(`Já a registro`)
+            return res.status(400).json({ message: `Socio já cadastrado! O contrato de numero: ${codigo_parceria} já tem registro!`})
+        }
+        conectBanco.query(cadastrarSocio, (err, resposta) => {
+            if (resposta == undefined) {
+                return res.status(400).json({ message: `Erro ao cadastrar`})
+            }
+            console.log(`Sucesso ao cadastrar socio!`)
+            res.status(200).json({ message: `Socio cadastrado com sucesso! Numero do contrato registrado: ${codigo_parceria}.`})
         })
     })
 })

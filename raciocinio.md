@@ -9,3 +9,10 @@ Iniciação da conexão com o Banco de Dados:
 
 Primeiros comandos:
     -Já comecei a criar os primeiros comandos para enviar as informações para o banco de dados. Algumas coisas já funcionaram, e estou pensando em como fazer as outras (a lógica).
+
+Mais trocas no Banco de Dados: 
+    -Percebi que é mais simples usar o CNPJ como chave primaria da tabela empresa.
+
+Percebi que posso ter interpretado errado:
+    -No desafio está escrito, "Criar um cadastro de pessoa jurídica com no mínimo os seguintes dados: Nome Fantasia, Razão Social, CNPJ Endereço, Sócios e Tipo da Empresa (LTDA, MEI etc.)", então esses Sócios são necessario na hora do cadastro, ou é apenas possível ter? De primeira achei que era necessario poder associar, mas agora percebo que talvez deva esta na mesma tabela, então vou entregar a segunda interpretação primeiro e depois a primeira. Só para garantir!
+
