@@ -30,6 +30,7 @@ app.post('/test-receber', (req, res) => {
     console.log(info)
 })
 
+//Cadastrar Empresa OK
 app.post('/cadastro_empresa', (req, res) => {
     const nome = req.body.nome
     const razao = req.body.razao
@@ -38,15 +39,19 @@ app.post('/cadastro_empresa', (req, res) => {
     const tipo = req.body.tipo
 
     const confirmarInexistencia = `select count(cnpj) as resultado from empresas where cnpj = ${cnpj};`
-    conectBanco.query(confirmarInexistencia, (err, result) => {
-        const resultado = result[0].resultado
+    const cadastroAprovado = `insert into empresas (nome, razao_social, cnpj, endereco, tipo) values ('${nome}', '${razao}', '${cnpj}', '${endereco}', '${tipo}');`
+    conectBanco.query(confirmarInexistencia, (err, resposta) => {
+        const resultado = resposta[0].resultado
         if (resultado !== 0) {
-            console.log('F')
-            console.log(resultado)
+            console.log('Já existe esse cadastro!')
+            return res.status(400).json({ message: 'CNPJ já cadastrado' });
         }
-        console.log('ta liberado')
-        console.log(resultado)
+        console.log('Não existe codigo continua!')
+        conectBanco.query(cadastroAprovado, (erro, respostaCadatroEmpresa) => {
+            if (respostaCadatroEmpresa == undefined) {
+                res.status(400).json({ message: `Erro ao inserir no banco de dados!`})
+            }
+            res.status(200).json({ message: `Cadastrado com sucesso`})
+        })
     })
-    res.json({ message: 'Chegou as info'})
-    console.log(nome, razao, cnpj, endereco, tipo)
 })
