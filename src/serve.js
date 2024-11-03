@@ -127,34 +127,76 @@ app.post('/usuario_cadastro', (req, res) => {
 
 
 app.get('/empresa_puxar', (req, res) => {
-    const cnpj = req.body.cnpj
-    let listaSocios = []
-    
-    
-    const puxarDados = `select * from empresas where cnpj = ${cnpj}`
-    const puxarSocios = `select * from socios where id_empresa = ${cnpj}`
-    conectBanco.query(puxarSocios, (err, resp) => {
-        const quantidadeSocios = resp.length
-        for(let i = 0; i < quantidadeSocios; i++) {
-            listaSocios.push({"NomeDoSócio": `${resp[i].nome}`, "CodigoDeContrato": `${resp[i].id_socios}`})
-        }
-    })
-    
-    conectBanco.query(puxarDados, (err, resp) => {
-        const resposta = resp[0]
-        const nome = resposta.nome
-        const razao = resposta.razao_social
-        const cnpj = resposta.cnpj
-        const endereco = resposta.endereco
-        const tipo = resposta.tipo
-        console.log(listaSocios)
-        res.status(200).json([{message: `Empresa: ${nome}`}, { detalhes: {
-            "Nome da empresa": `${nome}`,
-            "Razão Social": `${razao}`,
-            "CNPJ": `${cnpj}`,
-            "Endereço": `${endereco}`,
-            "Sócios": listaSocios,
-            "Tipo": `${tipo}`
-        }}])
-    })
+    const {cnpj, tipo, inicial, socios} = req.body
+    console.log(cnpj, tipo, inicial, socios)
+
+    let puxarDados = `select * from empresas where 1=1`
+
+    const filtroCnpj = ` and cnpj = ${cnpj}`
+    const filtroTipo = ` and tipo = "${tipo}"`
+    const filtroInicial = ` and nome like "${inicial}%"`
+
+    if(cnpj) {
+        puxarDados += filtroCnpj
+    }
+    if(tipo) {
+        puxarDados += filtroTipo
+    }
+    if(inicial) {
+        puxarDados += filtroInicial
+    }
+
+    console.log(puxarDados)
+
+    if(socios && cnpj) {
+        const puxarSocios = `select * from socios where id_empresa = ${cnpj}`
+        let listaSocios = []
+
+        conectBanco.query(puxarSocios, (err, resp) => {
+            const quantidadeSocios = resp.length
+            for(let i = 0; i < quantidadeSocios; i++) {
+                listaSocios.push({"NomeDoSócio": `${resp[i].nome}`, "CodigoDeContrato": `${resp[i].id_socios}`})
+            }
+        })
+        conectBanco.query(puxarDados, (err, resp) => {
+            const resposta = resp[0]
+            const nome = resposta.nome
+            const razao = resposta.razao_social
+            const cnpj = resposta.cnpj
+            const endereco = resposta.endereco
+            const tipo = resposta.tipo
+            console.log(listaSocios)
+            res.status(200).json([{message: `Empresa: ${nome}`}, { detalhes: {
+                "Nome da empresa": `${nome}`,
+                "Razão Social": `${razao}`,
+                "CNPJ": `${cnpj}`,
+                "Endereço": `${endereco}`,
+                "Sócios": listaSocios,
+                "Tipo": `${tipo}`
+            }}])
+        })
+    } else if (socios && !cnpj) {
+        res.status(400).json([{ message: `Para saber os sócios é necessário o CNPJ da empresa!`}])
+    }
+
+    if(!socios) {
+        conectBanco.query(puxarDados, (err, resp) => {
+            let respostaConstruida = []
+            resp.map((mapeado) => {
+                const {nome, razao_social, cnpj, endereco, tipo} = mapeado
+
+                respostaConstruida.push(
+                    [{message: `Empresa: ${nome}`}, { detalhes: {
+                        "Nome da empresa": `${nome}`,
+                        "Razão Social": `${razao_social}`,
+                        "CNPJ": `${cnpj}`,
+                        "Endereço": `${endereco}`,
+                        "Tipo": `${tipo}`
+                    }}]
+                )
+            })
+            console.log(respostaConstruida)
+            res.status(200).json(respostaConstruida)
+        })
+    }
 })
