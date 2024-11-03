@@ -63,7 +63,7 @@ app.post('/cadastrar_socio', (req, res) => {
     const socio_empresa = req.body.empresa
 
     const conferirInexistencia = `select count(id_socios) as quantidadeExistente from socios where id_socios = ${codigo_parceria} and id_empresa = ${socio_empresa}`
-    const cadastrarSocio = `insert into socios (id_socios, id_empresa, nome) value (${codigo_parceria}, ${socio_empresa}, '${nome_socio}');`
+    const cadastrarSocio = `insert into socios (id_socios, id_empresa, nome) value (${codigo_parceria}, ${socio_empresa}, '${nome_socio}')`
 
     conectBanco.query(conferirInexistencia, (erro, resp) => {
         const leituraResp = resp[0].quantidadeExistente
@@ -115,7 +115,7 @@ app.post('/usuario_cadastro', (req, res) => {
             })
         } else {
             conectBanco.query(inserirRegistro, (erro, resposta) => {
-                conectBanco.query(inserirRegistro, (falha, sinal) => {
+                conectBanco.query(inserirLigacao, (falha, sinal) => {
                     res.status(200).json({ message: 'Usuario inserido, e vínculado a empresa!'})
                 })
             })
@@ -124,3 +124,37 @@ app.post('/usuario_cadastro', (req, res) => {
 })
 
 // AQUI OS DE CONSULTAR !!
+
+
+app.get('/empresa_puxar', (req, res) => {
+    const cnpj = req.body.cnpj
+    let listaSocios = []
+    
+    
+    const puxarDados = `select * from empresas where cnpj = ${cnpj}`
+    const puxarSocios = `select * from socios where id_empresa = ${cnpj}`
+    conectBanco.query(puxarSocios, (err, resp) => {
+        const quantidadeSocios = resp.length
+        for(let i = 0; i < quantidadeSocios; i++) {
+            listaSocios.push({"NomeDoSócio": `${resp[i].nome}`, "CodigoDeContrato": `${resp[i].id_socios}`})
+        }
+    })
+    
+    conectBanco.query(puxarDados, (err, resp) => {
+        const resposta = resp[0]
+        const nome = resposta.nome
+        const razao = resposta.razao_social
+        const cnpj = resposta.cnpj
+        const endereco = resposta.endereco
+        const tipo = resposta.tipo
+        console.log(listaSocios)
+        res.status(200).json([{message: `Empresa: ${nome}`}, { detalhes: {
+            "Nome da empresa": `${nome}`,
+            "Razão Social": `${razao}`,
+            "CNPJ": `${cnpj}`,
+            "Endereço": `${endereco}`,
+            "Sócios": listaSocios,
+            "Tipo": `${tipo}`
+        }}])
+    })
+})
