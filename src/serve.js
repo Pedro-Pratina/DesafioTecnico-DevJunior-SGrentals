@@ -91,7 +91,7 @@ app.post('/usuario_cadastro', (req, res) => {
     const cpf = req.body.cpf
     const nome = req.body.nome
     const cnpj = req.body.cnpj
-    const tipo = req.body.perfil
+    const tipo = req.body.tipo
     const status = req.body.status
 
     const conferirRegistro = `select count(cpf) as buscaCpf from usuarios where cpf = ${cpf}`
