@@ -200,3 +200,50 @@ app.get('/empresa_puxar', (req, res) => {
         })
     }
 })
+
+app.get('/usuario_puxar', (req, res) => {
+    const {cnpj, cpf, perfil, status} = req.body
+    let pesquisarUsuario = `select empresas.nome as 'empresa', usuarios.cpf, usuarios.nome, empresa_usuario.tipo as 'perfil', empresa_usuario.status_atual as 'status' from usuarios inner join empresa_usuario on usuarios.cpf = empresa_usuario.id_usuario inner join empresas on empresas.cnpj = empresa_usuario.id_empresa where 0=0`
+    
+    const porCpf = ` and usuarios.cpf = '${cpf}'`
+    const porPerfil = ` and empresa_usuario.tipo like '${perfil.substr(0,2)}%'`
+    const porStatus = ` and empresa_usuario.status_atual like '${status.substr(0,2)}%'`
+    const porCnpj = ` and empresa_usuario.id_empresa = '${cnpj}'`
+
+    if(cpf){
+        pesquisarUsuario += porCpf;
+    }
+    if(perfil){
+        pesquisarUsuario += porPerfil;
+    }
+    if(status){
+        pesquisarUsuario += porStatus;
+    }
+    if(cnpj){
+        pesquisarUsuario += porCnpj;
+    }
+
+
+    conectBanco.query(pesquisarUsuario, (err, resp)=> {
+        
+        if(err){
+            res.status(500).json({ message: 'erro ao consultar!'})
+        } else {
+            let montarResposta = []
+            resp.map((eita) => {
+                const {empresa, cpf, nome, perfil, status} = eita
+                console.log(cnpj, cpf, nome, perfil, status)
+                montarResposta.push(
+                    [{message: `CNPJ Empresa: ${empresa}`}, { detalhes: {
+                        "Nome usuário": `${nome}`,
+                        "CPF": `${cpf}`,
+                        "Perfil": `${perfil}`,
+                        "Status": `${status}`
+                    }}]
+                )
+            })
+            console.log(`Pesquisa de usuário feita!`)
+            res.status(200).json(montarResposta)
+        }
+    })
+})
