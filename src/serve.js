@@ -349,3 +349,44 @@ app.put('/editar_empresa', (req, res) => {
         res.status(200).json({ message: `Dados editado com sucesso!`})
     })
 })
+
+app.put('/editar_usuarios', (req, res) => {
+    const {cpf, nome, cnpj, perfil, status} = req.body
+
+    if(perfil || status && !cnpj){
+        return res.status(400).json({ message: `Para editar o perfil do usuário ou ativa ou inativar, é necessário o CNPJ da empresa!`})
+    }
+
+    let editarUsuario = `update usuarios set nome = '${nome}' where cpf = ${cpf}`
+    let editarStatusPerfil = `update empresa_usuario set ${parametros} id_empresa = ${cnpj} where id_empresa = ${cnpj} and id_usuario = ${cpf}`
+
+    let parametros = ``
+
+    if(perfil){
+        parametros += ` tipo = ${perfil},`
+    }
+    if(perfil){
+        parametros += ` status_atual = ${status},`
+    }
+
+    if(perfil || status){
+        conectBanco.query(editarStatusPerfil, (err, resp) => {
+            if(err){
+                return res.status(500).json({ message: `Erro ao editar perfil ou status!`})
+            }
+            conectBanco.query(editarUsuario, (erro, resposta) => {
+                if(erro){
+                    return res.status(500).json({ message: `Erro ao editar usuário!`})
+                }
+                res.status(200).json({ message: `Usuário editado com sucesso!`})
+            })
+        })
+    } else {
+        conectBanco.query(editarUsuario, (erro, resposta) => {
+            if(erro){
+                return res.status(500).json({ message: `Erro ao editar usuário!`})
+            }
+            res.status(200).json({ message: `Usuário editado com sucesso!`})
+        })
+    }
+})
