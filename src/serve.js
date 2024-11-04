@@ -7,6 +7,7 @@ const porta = 3000
 app.use(cors())
 app.use(express.json())
 
+//conectar Banco de Dados
 const conectBanco = sql.createConnection({
     host: 'localhost',
     user: 'test',
@@ -14,6 +15,7 @@ const conectBanco = sql.createConnection({
     database: 'test_dev'
 });
 
+//Teste
 conectBanco.connect((err) => {
     if (err) {console.log(err)}
     else {console.log('conectado')}
@@ -23,6 +25,7 @@ app.listen(porta, () => {
     console.log(`Aberto na porta: ${porta}`)
 })
 
+//Teste de envio
 app.post('/test-receber', (req, res) => {
     console.log(req.body)
     const info = req.body.nome;
@@ -30,7 +33,7 @@ app.post('/test-receber', (req, res) => {
     console.log(info)
 })
 
-//Cadastrar Empresa OK
+//Funções de cadastro.
 app.post('/cadastro_empresa', (req, res) => {
     const nome = req.body.nome
     const razao = req.body.razao
@@ -82,10 +85,6 @@ app.post('/cadastrar_socio', (req, res) => {
     })
 })
 
-
-
-//Usuario
-
 app.post('/usuario_cadastro', (req, res) => {
     const cpf = req.body.cpf
     const nome = req.body.nome
@@ -122,9 +121,7 @@ app.post('/usuario_cadastro', (req, res) => {
     })
 })
 
-// AQUI OS DE CONSULTAR !!
-
-
+//Comandos de buscas
 app.get('/empresa_puxar', (req, res) => {
     const {cnpj, tipo, inicial, socios} = req.body
     console.log(cnpj, tipo, inicial, socios)
@@ -247,9 +244,7 @@ app.get('/usuario_puxar', (req, res) => {
     })
 })
 
-
-
-
+//Comandos de delatar
 app.delete('/deletar_empresa', (req, res) => {
     const cnpj = req.body.cnpj
 
@@ -323,10 +318,7 @@ app.delete('/delete_usuario', (req, res) => {
 
 })
 
-
-
-//editar:
-
+//Comandos de edição.
 app.put('/editar_empresa', (req, res) => {
     const {cnpj, nome, razao_social, endereco, tipo}  = req.body
 
