@@ -43,12 +43,11 @@ app.post('/cadastro_empresa', (req, res) => {
     conectBanco.query(confirmarInexistencia, (err, resposta) => {
         const resultado = resposta[0].resultado
         if (resultado !== 0) {
-            console.log('Já existe esse cadastro!')
             return res.status(400).json({ message: 'CNPJ já cadastrado!' });
         } else {
             conectBanco.query(cadastroAprovado, (erro, respostaCadatroEmpresa) => {
                 if (respostaCadatroEmpresa == undefined) {
-                    res.status(400).json({ message: `Erro ao inserir no banco de dados!`})
+                    return res.status(400).json({ message: `Erro ao inserir no banco de dados!`})
                 }
                 res.status(200).json({ message: `Cadastrado com sucesso`})
                 console.log(`Cadastrado!`)
@@ -176,7 +175,7 @@ app.get('/empresa_puxar', (req, res) => {
             }}])
         })
     } else if (socios && !cnpj) {
-        res.status(400).json([{ message: `Para saber os sócios é necessário o CNPJ da empresa!`}])
+        return res.status(400).json([{ message: `Para saber os sócios é necessário o CNPJ da empresa!`}])
     }
 
     if(!socios) {
@@ -204,7 +203,7 @@ app.get('/empresa_puxar', (req, res) => {
 app.get('/usuario_puxar', (req, res) => {
     const {cnpj, cpf, perfil, status} = req.body
     let pesquisarUsuario = `select empresas.nome as 'empresa', usuarios.cpf, usuarios.nome, empresa_usuario.tipo as 'perfil', empresa_usuario.status_atual as 'status' from usuarios inner join empresa_usuario on usuarios.cpf = empresa_usuario.id_usuario inner join empresas on empresas.cnpj = empresa_usuario.id_empresa where 0=0`
-    
+
     const porCpf = ` and usuarios.cpf = '${cpf}'`
     const porPerfil = ` and empresa_usuario.tipo like '${perfil.substr(0,2)}%'`
     const porStatus = ` and empresa_usuario.status_atual like '${status.substr(0,2)}%'`
@@ -227,7 +226,7 @@ app.get('/usuario_puxar', (req, res) => {
     conectBanco.query(pesquisarUsuario, (err, resp)=> {
         
         if(err){
-            res.status(500).json({ message: 'erro ao consultar!'})
+            return res.status(500).json({ message: 'erro ao consultar!'})
         } else {
             let montarResposta = []
             resp.map((eita) => {
@@ -245,5 +244,47 @@ app.get('/usuario_puxar', (req, res) => {
             console.log(`Pesquisa de usuário feita!`)
             res.status(200).json(montarResposta)
         }
+    })
+})
+
+
+
+
+app.delete('/deletar_empresa', (req, res) => {
+    const cnpj = req.body.cnpj
+
+    const deletaLigacoes = `delete from empresa_usuario where id_empresa = ${cnpj}`
+    const deletaSocios = `delete from socios where id_empresa = ${cnpj}`
+    const deletaRegistro = `delete from empresas where cnpj = ${cnpj}`
+
+    conectBanco.query(deletaLigacoes, (err, resp) => {
+        if(err){
+            return res.status(500).json({ message: `Erro ao deletar as ligações da empresa!`})
+        }
+        conectBanco.query(deletaSocios, (erro, resposta) => {
+            if(erro){
+                return resp.status(500).json({ message: `Erro ao deletar sócios`})
+            }
+            conectBanco.query(deletaRegistro, (erroFinal, respostaFinal) => {
+                if(erroFinal){
+                   return res.status(500).json({ message: `Erro ao deletar o registro da empresa!`})
+                }
+                res.status(200).json({ message: `Empresa deletada com sucesso!`})
+            })
+        })
+    })
+})
+
+app.delete('/delete_socios', (req, res) => {
+    const contrato = req.body.numeroContrato
+    const cnpj = req.body.cnpj
+
+    const deleteSocio = `delete from socios where id_socios = ${contrato} and id_empresa = ${cnpj}`
+
+    conectBanco.query(deleteSocio, (err, resp) => {
+        if(err){
+            return res.status(500).json({ message: `Erro ao deletar!`})
+        }
+        res.status(200).json({ message: `Sócio deletado!`})
     })
 })
