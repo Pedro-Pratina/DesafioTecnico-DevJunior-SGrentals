@@ -288,3 +288,72 @@ app.delete('/delete_socios', (req, res) => {
         res.status(200).json({ message: `Sócio deletado!`})
     })
 })
+
+app.delete('/delete_usuario', (req, res) => {
+    const cpf = req.body.cpf
+
+    const consultarLigacoes = `select count(id_usuario) as quantLigacoes from empresa_usuario where id_usuario = ${cpf}`
+    const deletarLigacoes = `delete from empresa_usuario where id_usuario = ${cpf}`
+    const deletarRegistro = `delete from usuarios where cpf = ${cpf}`
+
+    conectBanco.query(consultarLigacoes, (erroConsulta, respostaConsulta) => {
+        if(respostaConsulta[0].quantLigacoes !== 0){
+            conectBanco.query(deletarLigacoes, (err, resp) => {
+                if(err){
+                    return res.status(500).json({ message: `Erro ao deletar ligações do usuário!`})
+                }
+                conectBanco.query(deletarRegistro, (erro, resposta) => {
+                    if(erro){
+                        return res.status(500).json({ message: `Erro ao deletar usuário!`})
+                    }
+                    console.log(`Usuário e ligações deletados!`)
+                    res.status(200).json({ message: `Usuário deletado com sucesso!`})
+                })
+            })
+        } else {
+            conectBanco.query(deletarRegistro, (erro, resposta) => {
+                if(erro){
+                    return res.status(500).json({ message: `Erro ao deletar usuário!`})
+                }
+                console.log(`Usuário deletado!`)
+                res.status(200).json({ message: `Usuário deletado com sucesso!`})
+            })
+        }
+    })
+
+})
+
+
+
+//editar:
+
+app.put('/editar_empresa', (req, res) => {
+    const {cnpj, nome, razao_social, endereco, tipo}  = req.body
+
+    if(!cnpj){
+        return res.status(400).json({ message: `É necessário o CNPJ da empresa!`})
+    }
+
+    let dadosAlterar = ``
+
+    if(nome){
+        dadosAlterar += `nome = '${nome}',`
+    }
+    if(razao_social){
+        dadosAlterar += `razao_social = '${razao_social},'`
+    }
+    if(endereco){
+        dadosAlterar += `endereco = '${endereco}',`
+    }
+    if(tipo){
+        dadosAlterar += `tipo = '${tipo}'`
+    }
+
+    const editarEmpresa = `update empresas set ${dadosAlterar} cnpj = ${cnpj} where cnpj = ${cnpj}`
+    conectBanco.query(editarEmpresa, (err,resp) => {
+        if(err){
+            return res.status(500).json({ message: `Erro ao Editar empresa!`})
+        }
+        res.status(200).json({ message: `Dados editado com sucesso!`})
+    })
+})
