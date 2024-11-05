@@ -328,20 +328,25 @@ app.put('/editar_empresa', (req, res) => {
 
     let dadosAlterar = ``
 
+    const nomeSet = `nome = '${nome}',`
+    const razaoSet = `razao_social = '${razao_social}',`
+    const enderecoSet = `endereco = '${endereco}',`
+    const tipoSet = `tipo = '${tipo}',`
+
     if(nome){
-        dadosAlterar += `nome = '${nome}',`
+        dadosAlterar += nomeSet
     }
     if(razao_social){
-        dadosAlterar += `razao_social = '${razao_social},'`
+        dadosAlterar += razaoSet
     }
     if(endereco){
-        dadosAlterar += `endereco = '${endereco}',`
+        dadosAlterar += enderecoSet
     }
     if(tipo){
-        dadosAlterar += `tipo = '${tipo}'`
+        dadosAlterar += tipoSet
     }
-
-    const editarEmpresa = `update empresas set ${dadosAlterar} cnpj = ${cnpj} where cnpj = ${cnpj}`
+    
+    let editarEmpresa = `update empresas set ${dadosAlterar} cnpj = ${cnpj} where cnpj = ${cnpj}`
     conectBanco.query(editarEmpresa, (err,resp) => {
         if(err){
             return res.status(500).json({ message: `Erro ao Editar empresa!`})
@@ -353,35 +358,44 @@ app.put('/editar_empresa', (req, res) => {
 app.put('/editar_usuarios', (req, res) => {
     const {cpf, nome, cnpj, perfil, status} = req.body
 
-    if(perfil || status && !cnpj){
+    if(perfil && !cnpj || status && !cnpj){
         return res.status(400).json({ message: `Para editar o perfil do usuário ou ativa ou inativar, é necessário o CNPJ da empresa!`})
     }
 
     let editarUsuario = `update usuarios set nome = '${nome}' where cpf = ${cpf}`
-    let editarStatusPerfil = `update empresa_usuario set ${parametros} id_empresa = ${cnpj} where id_empresa = ${cnpj} and id_usuario = ${cpf}`
 
     let parametros = ``
 
+    const perfilSet = ` tipo = '${perfil}',`
+    const statusSet = ` status_atual = '${status}',`
+
     if(perfil){
-        parametros += ` tipo = ${perfil},`
+        parametros += perfilSet
     }
-    if(perfil){
-        parametros += ` status_atual = ${status},`
+    if(status){
+        parametros += statusSet
     }
 
+    let editarStatusPerfil = `update empresa_usuario set ${parametros} id_empresa = ${cnpj} where id_empresa = ${cnpj} and id_usuario = ${cpf}`
+    console.log(editarStatusPerfil)
     if(perfil || status){
         conectBanco.query(editarStatusPerfil, (err, resp) => {
             if(err){
+                console.log(err)
                 return res.status(500).json({ message: `Erro ao editar perfil ou status!`})
             }
-            conectBanco.query(editarUsuario, (erro, resposta) => {
-                if(erro){
-                    return res.status(500).json({ message: `Erro ao editar usuário!`})
-                }
+            if(nome){
+                conectBanco.query(editarUsuario, (erro, resposta) => {
+                    if(erro){
+                        return res.status(500).json({ message: `Erro ao editar usuário!`})
+                    }
+                    res.status(200).json({ message: `Usuário editado com sucesso!`})
+                })
+            } else {
                 res.status(200).json({ message: `Usuário editado com sucesso!`})
-            })
+            }
         })
-    } else {
+    } else if (nome) {
         conectBanco.query(editarUsuario, (erro, resposta) => {
             if(erro){
                 return res.status(500).json({ message: `Erro ao editar usuário!`})
@@ -389,4 +403,22 @@ app.put('/editar_usuarios', (req, res) => {
             res.status(200).json({ message: `Usuário editado com sucesso!`})
         })
     }
+})
+
+app.put('/editar_socio', (req, res) => {
+    const id_socios = req.body.contrato
+    const id_empresa = req.body.cnpj
+    const nome = req.body.nome
+
+    const editarSocio = `update socios set nome = '${nome}' where id_empresa = ${id_empresa} and id_socios = ${id_socios}`
+
+    if(!id_empresa||!id_socios||!nome) {
+        return res.status(400).json({ message: `Informações faltando!`})
+    }
+    conectBanco.query(editarSocio, (err, resp) => {
+        if(err){
+            return res.status(500).json({ message: `Erro ao editar Sócio!`})
+        }
+        res.status(200).json({ message: `Editado com sucesso!`})
+    })
 })
