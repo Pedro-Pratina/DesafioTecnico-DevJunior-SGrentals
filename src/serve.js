@@ -252,6 +252,9 @@ app.delete('/deletar_empresa', (req, res) => {
     const deletaSocios = `delete from socios where id_empresa = ${cnpj}`
     const deletaRegistro = `delete from empresas where cnpj = ${cnpj}`
 
+    const tiraSafe = `set sql_safe_updates = 0`
+    conectBanco.query(tiraSafe, (err, resp) => {})
+
     conectBanco.query(deletaLigacoes, (err, resp) => {
         if(err){
             return res.status(500).json({ message: `Erro ao deletar as ligações da empresa!`})
@@ -276,6 +279,9 @@ app.delete('/delete_socios', (req, res) => {
 
     const deleteSocio = `delete from socios where id_socios = ${contrato} and id_empresa = ${cnpj}`
 
+    const tiraSafe = `set sql_safe_updates = 0`
+    conectBanco.query(tiraSafe, (err, resp) => {})
+
     conectBanco.query(deleteSocio, (err, resp) => {
         if(err){
             return res.status(500).json({ message: `Erro ao deletar!`})
@@ -290,6 +296,9 @@ app.delete('/delete_usuario', (req, res) => {
     const consultarLigacoes = `select count(id_usuario) as quantLigacoes from empresa_usuario where id_usuario = ${cpf}`
     const deletarLigacoes = `delete from empresa_usuario where id_usuario = ${cpf}`
     const deletarRegistro = `delete from usuarios where cpf = ${cpf}`
+
+    const tiraSafe = `set sql_safe_updates = 0`
+    conectBanco.query(tiraSafe, (err, resp) => {})
 
     conectBanco.query(consultarLigacoes, (erroConsulta, respostaConsulta) => {
         if(respostaConsulta[0].quantLigacoes !== 0){
@@ -347,6 +356,10 @@ app.put('/editar_empresa', (req, res) => {
     }
     
     let editarEmpresa = `update empresas set ${dadosAlterar} cnpj = ${cnpj} where cnpj = ${cnpj}`
+
+    const tiraSafe = `set sql_safe_updates = 0`
+    conectBanco.query(tiraSafe, (err, resp) => {})
+
     conectBanco.query(editarEmpresa, (err,resp) => {
         if(err){
             return res.status(500).json({ message: `Erro ao Editar empresa!`})
@@ -377,7 +390,10 @@ app.put('/editar_usuarios', (req, res) => {
     }
 
     let editarStatusPerfil = `update empresa_usuario set ${parametros} id_empresa = ${cnpj} where id_empresa = ${cnpj} and id_usuario = ${cpf}`
-    console.log(editarStatusPerfil)
+    
+    const tiraSafe = `set sql_safe_updates = 0`
+    conectBanco.query(tiraSafe, (err, resp) => {})
+
     if(perfil || status){
         conectBanco.query(editarStatusPerfil, (err, resp) => {
             if(err){
@@ -412,9 +428,13 @@ app.put('/editar_socio', (req, res) => {
 
     const editarSocio = `update socios set nome = '${nome}' where id_empresa = ${id_empresa} and id_socios = ${id_socios}`
 
+    const tiraSafe = `set sql_safe_updates = 0`
+    conectBanco.query(tiraSafe, (err, resp) => {})
+
     if(!id_empresa||!id_socios||!nome) {
         return res.status(400).json({ message: `Informações faltando!`})
     }
+
     conectBanco.query(editarSocio, (err, resp) => {
         if(err){
             return res.status(500).json({ message: `Erro ao editar Sócio!`})
